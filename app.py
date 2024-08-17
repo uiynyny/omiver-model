@@ -1,3 +1,5 @@
 import streamlit as st
-x= st.slider('Select a value')
-st.write(x, 'squared is', x * x)
+
+prompt = st.chat_input("Say something")
+if prompt:
+    st.write(f"User has sent the following prompt: {prompt}")
