@@ -17,6 +17,7 @@ You are a nutritionist expert in metabolomics. You will help clients with their 
 Answer the question based on the above context: {question}
 """
 
+
 def get_embedding_function():
     model_name = "sentence-transformers/all-mpnet-base-v2"
     model_kwargs = {"device": "cpu"}
@@ -26,13 +27,13 @@ def get_embedding_function():
     )
     return hf
 
+
 def query_rag(query_text: str, vector_store):
     # Prepare the DB.
     # vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
 
-
     # Search the DB.
-    #results = db.similarity_search_with_score(query_text, k=5)
+    # results = db.similarity_search_with_score(query_text, k=5)
     results = vector_store.similarity_search_with_score(query_text, k=5)
 
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
@@ -40,8 +41,8 @@ def query_rag(query_text: str, vector_store):
     prompt = prompt_template.format(context=context_text, question=query_text)
     # print(prompt)
 
-    model=ChatGroq(api_key=os.getenv("GROQ_KEY"),model="llama-3.1-8b-instant")
-    
+    model = ChatGroq(api_key=os.getenv("GROQ_KEY"), model="llama-3.1-8b-instant")
+
     response_text = model.invoke(prompt)
 
     sources = [doc.metadata.get("id", None) for doc, _score in results]
@@ -53,7 +54,11 @@ def query_rag(query_text: str, vector_store):
 st.title("Omiver chatbot v2")
 
 # Prepare the DB.
-vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
+vector_store = PineconeVectorStore(
+    index_name="metabodb",
+    embedding=get_embedding_function(),
+    pinecone_api_key=os.getenv("PINECONE_API_KEY"),
+)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -68,5 +73,6 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response = st.markdown(query_rag(st.session_state.messages[-1],vector_store))
+        resp = query_rag(st.session_state.messages[-1]["content"], vector_store)
+        response = st.markdown(resp.content)
     st.session_state.messages.append({"role": "assistant", "content": response})
