@@ -1,11 +1,9 @@
 import streamlit as st
 
-import argparse
 from langchain.prompts import ChatPromptTemplate
 from langchain_pinecone.vectorstores import PineconeVectorStore
 from langchain_groq import ChatGroq
 
-from get_embedding_function import get_embedding_function
 import os
 
 PROMPT_TEMPLATE = """
