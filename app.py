@@ -2,6 +2,7 @@ import streamlit as st
 
 from langchain.prompts import ChatPromptTemplate
 from langchain_pinecone.vectorstores import PineconeVectorStore
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 
 import os
