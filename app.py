@@ -51,15 +51,10 @@ def query_rag(query_text: str, vector_store):
     return response_text
 
 
-st.title("ChatGPT-like clone")
-
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+st.title("Omiver chatbot v2")
 
 # Prepare the DB.
 vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
-
-if "openai_model" not in st.session_state:
-    st.session_state["openai_model"] = "gpt-3.5-turbo"
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
