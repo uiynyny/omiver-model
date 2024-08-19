@@ -1,9 +1,62 @@
-from openai import OpenAI
 import streamlit as st
+
+import argparse
+from langchain.prompts import ChatPromptTemplate
+from langchain_pinecone.vectorstores import PineconeVectorStore
+from langchain_groq import ChatGroq
+
+from get_embedding_function import get_embedding_function
+import os
+
+PROMPT_TEMPLATE = """
+Answer the question based only on the following context:
+You are a nutritionist expert in metabolomics. You will help clients with their needs after they give some information about them. Then you need to provide suggestions to help them achieve their goals based on the user's given data regarding their diet preferences, race, sexuality, age, etc.. 
+{context}
+
+---
+
+Answer the question based on the above context: {question}
+"""
+
+def get_embedding_function():
+    model_name = "sentence-transformers/all-mpnet-base-v2"
+    model_kwargs = {"device": "cpu"}
+    encode_kwargs = {"normalize_embeddings": False}
+    hf = HuggingFaceEmbeddings(
+        model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
+    )
+    return hf
+
+def query_rag(query_text: str):
+    # Prepare the DB.
+    vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
+
+
+    # Search the DB.
+    #results = db.similarity_search_with_score(query_text, k=5)
+    results = vector_store.similarity_search_with_score(query_text, k=5)
+
+    context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
+    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+    prompt = prompt_template.format(context=context_text, question=query_text)
+    # print(prompt)
+
+    model=ChatGroq(api_key=os.getenv("GROQ_KEY"),model="llama-3.1-8b-instant")
+    
+    response_text = model.invoke(prompt)
+
+    sources = [doc.metadata.get("id", None) for doc, _score in results]
+    formatted_response = f"Response: {response_text}\nSources: {sources}"
+    print(formatted_response)
+    return response_text
+
 
 st.title("ChatGPT-like clone")
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+# Prepare the DB.
+    vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
 
 if "openai_model" not in st.session_state:
     st.session_state["openai_model"] = "gpt-3.5-turbo"
@@ -21,13 +74,5 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        stream = client.chat.completions.create(
-            model=st.session_state["openai_model"],
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
-        response = st.write_stream(stream)
+        response = st.markdown(query_rag(st.session_state.messages[-1]))
     st.session_state.messages.append({"role": "assistant", "content": response})
