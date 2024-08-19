@@ -27,9 +27,9 @@ def get_embedding_function():
     )
     return hf
 
-def query_rag(query_text: str):
+def query_rag(query_text: str, vector_store):
     # Prepare the DB.
-    vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
+    # vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
 
 
     # Search the DB.
@@ -56,7 +56,7 @@ st.title("ChatGPT-like clone")
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # Prepare the DB.
-    vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
+vector_store = PineconeVectorStore(index_name="metabodb", embedding=get_embedding_function())
 
 if "openai_model" not in st.session_state:
     st.session_state["openai_model"] = "gpt-3.5-turbo"
@@ -74,5 +74,5 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        response = st.markdown(query_rag(st.session_state.messages[-1]))
+        response = st.markdown(query_rag(st.session_state.messages[-1],vector_store))
     st.session_state.messages.append({"role": "assistant", "content": response})
