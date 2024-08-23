@@ -47,7 +47,7 @@ def query_rag(query_text: str, vector_store):
 
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     formatted_response = f"Response: {response_text}\nSources: {sources}"
-    print(formatted_response)
+    #print(formatted_response)
     return response_text
 
 
@@ -75,4 +75,4 @@ if prompt := st.chat_input("What is up?"):
     with st.chat_message("assistant"):
         resp = query_rag(st.session_state.messages[-1]["content"], vector_store)
         response = st.markdown(resp.content)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    st.session_state.messages.append({"role": "assistant", "content": resp.content})
